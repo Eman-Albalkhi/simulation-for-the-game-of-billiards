@@ -1,2 +1,6 @@
 # simulation-for-the-game-of-billiards
-This project aims to build a core for a physics simulator that models the interaction between balls, including the transfer of velocity between them and the surrounding medium.
+
+this project was written in C++ using object-oriented programming and OpenGL. However, the code files have been uploaded in text file format, and there is a detailed explanation provided in a PDF file.
+****
+
+The detailed explanation in the PDF file should provide a clear understanding of the code structure, how it works, and how it can be modified or expanded upon. This should make it easier for developers to work with the code and make any necessary changes to meet their specific needs.
