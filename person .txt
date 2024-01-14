@@ -1,0 +1,25 @@
+#pragma once
+#include "Vector.h"
+#define PI 3.14159265358979323846
+class Person
+{
+public:
+	double m, t;
+	Vector pos, v;
+	//float v;
+
+	Person()
+	{
+		m = 40;
+		v.x = 0;
+		v.z = 10;
+
+	}
+
+	double theata()
+	{
+		return atan((double)v.z / v.x) * 180 / PI;
+	}
+
+
+};

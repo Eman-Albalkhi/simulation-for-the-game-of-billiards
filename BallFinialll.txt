@@ -1,0 +1,377 @@
+#pragma once
+#include"Vector.h"
+#include "Stick.h"
+#include <iostream>
+#include <math.h>
+#define g  8.9
+#define PI 3.14159265358979323846
+#define dt 1.0/60.0
+using namespace std;
+
+
+class Ball
+{
+public:
+	double reduies;
+	double m;
+	Vector pos, posMain, posOld, v, a;
+	Vector F, Fe, Fs, s;
+	Vector vec, vec1, vec2;
+	int x;
+	Vector T, elfa, w, w1, w2, theta;
+	double k;
+	double tas, temp;
+	double teta, teta1, teta2;
+
+	Ball()
+	{
+		x = 0;
+		s = 0;
+	}
+
+	void Set(double m, double reduies, Vector posMainB, double fx, double fz)
+	{
+		x = 0;
+		s = 0;
+		this->m = m;
+		this->reduies = reduies;
+		posMain.x = posMainB.x;
+		posMain.z = posMainB.z;
+		F.x = Fs.x = fx;
+		F.z = Fs.z = fz;
+	}
+
+	Vector FW()
+	{
+		Vector f;
+		f.y = g*m;
+		return f;
+	}
+
+	Vector FR()
+	{
+		Vector f;
+		f.y = g*m;
+		return f;
+	}
+
+	Vector Fr()
+	{
+		Vector f;
+		double cd = 0.4257;
+		double p = 0.225;
+		double A = PI*reduies*reduies;
+		if (v.x > 0)
+			f.x = 0.5*cd*A*v.x*v.x*p;
+		else if (v.x < 0)
+			f.x = -0.5*cd*A*v.x*v.x*p;
+		if (v.z > 0)
+			f.z = 0.5*cd*A*v.z*v.z*p;
+		else if (v.z < 0)
+			f.z = -0.5*cd*A*v.z*v.z*p;
+		return f;
+	}
+
+	Vector FF()
+	{
+		Vector f;
+		double u = 0.01;
+		if (v.x>0)
+			f.x = u*(m*g);
+		else if (v.x<0)
+			f.x = -u*(m*g);
+		if (v.z >0)
+			f.z = u*(m*g);
+		else if (v.z <0)
+			f.z = -u*(m*g);
+		return f;
+	}
+	Vector T_fatel()
+	{
+		Vector T;
+		T.x = -k * theta.x;
+		return T;
+	}
+	double I()
+	{
+		return (2.0 / 5.0)*m*reduies*reduies;
+	}
+
+
+
+	double FD_theata(Ball B2)
+	{
+		teta = atan((double)((posMain.z - B2.posMain.z) / (posMain.x - B2.posMain.x))) * 180 / PI;
+		return teta;
+	}
+
+	double FD_theata_V(Ball B1)
+	{
+		return atan((double)B1.v.z / B1.v.x) * 180 / PI;
+	}
+
+	Ball forces_ball_ball(Ball B1)
+	{
+
+		cout <<"\nBefor Collision"<<endl;
+		cout <<"\n\nB2.v.x:" << v.x <<endl;
+		cout <<"B2.v.z:" << v.z <<endl;
+		cout <<"B2.pos.x:" << posMain.x <<endl;
+		cout <<"B2.pos.z:" << posMain.z <<endl;
+		cout <<"B2.F.x:" << F.x <<endl;
+		cout <<"B2.F.z:" << F.z <<endl;
+		cout <<"B2.Fs.z:" << Fs.x <<endl;
+		cout <<"B2.Fs.z:" << Fs.z <<endl;
+
+
+		cout <<"\n\nB1.v.x:" << B1.v.x <<endl;
+		cout <<"B1.v.z:" << B1.v.z <<endl;
+		cout <<"B1.pos.x:" << B1.posMain.x <<endl;
+		cout <<"B1.pos.z:" << B1.posMain.z <<endl;
+		cout <<"B1.F.x:" << B1.F.x <<endl;
+		cout <<"B1.F.z:" << B1.F.z <<endl;
+		cout <<"B1.Fs.x:" << B1.Fs.x <<endl;
+		cout <<"B1.Fs.z:" << B1.Fs.z <<endl;
+
+
+
+
+		cout << "\n*************************************** collision ************************************" << endl;
+
+		vec = v;
+		vec1 = B1.v;
+
+		teta1 = FD_theata(B1)*PI / 180;
+		cout <<"teta1: "<< FD_theata(B1)<<endl;
+		cout <<"teta1*PI/180 : "<< FD_theata(B1)*PI/180<<endl;
+
+		if (FD_theata(B1) < 0)
+		{
+			temp = abs(FD_theata(B1));
+			teta2 = (90 - temp)*-1 * PI / 180;
+			cout<<"teta2: "<<(90 -temp)*-1<<endl;
+			cout<<"teta2*PI/180 : "<<(90 -temp)*-1*PI/180<<endl;
+		}
+		else
+		{
+			teta2 = (90 - FD_theata(B1))*PI / 180;
+			cout<<"teta2: "<<(90 -FD_theata(B1))<<endl;
+			cout<<"teta2*PI/180 : "<<(90 -FD_theata(B1))*PI/180<<endl;
+		}
+
+		if (FD_theata(B1) == 0 || FD_theata(B1) == -90 || FD_theata(B1) == FD_theata_V(B1))
+		{
+			double _2m1v1 = 2 * B1.m;
+			double m2m1 = m - B1.m;
+			double mm = B1.m + m;
+
+			v = (vec1 * 2 * B1.m + vec * m2m1) / (mm);
+
+			double _2m2v2 = 2 * m;
+			double m1m2 = B1.m - m;
+
+			B1.v = (vec * _2m2v2 + vec1 * m1m2) / (mm);
+			cout <<"sin(teta1): "<<sin(teta1)<<endl;
+			cout <<"cos(teta1): "<<cos(teta1)<<endl;
+
+			cout <<"sin(teta2): "<<sin(teta2)<<endl;
+			cout <<"cos(teta2): "<<cos(teta2)<<endl;
+		}
+
+		else
+		{
+			v = ((vec1 * B1.m) + (vec * m)) / (m * sin(teta2) * (cos(teta1) / sin(teta1)) + m * cos(teta2));
+			B1.v = (v * m *sin(teta2)) / (B1.m * sin(teta1));
+			B1.v.z = B1.v.z * -1;
+
+
+		}
+
+
+
+
+
+		B1.F = B1.v * B1.m;
+		B1.F = (B1.v * B1.m) + B1.FR() - B1.FW() - B1.Fr() - B1.FF();
+
+		F = v * m;
+		F = (v * m) + FR() - FW() - Fr() - FF();
+		T = F*reduies;
+
+		B1.Fs = B1.v * B1.m;
+		Fs = v * m;
+
+		B1.a = B1.F / B1.m;
+		a = F / m;
+
+		B1.pos = B1.v*dt + B1.pos;
+		pos = v*dt + pos;
+
+		B1.posMain = B1.v*dt + B1.posMain;
+		posMain = v*dt + posMain;
+
+		cout <<"\nAfter Collision"<<endl;
+		cout <<"\n\nB2.v.x:" << v.x <<endl;
+		cout <<"B2.v.z:" << v.z <<endl;
+		cout <<"B2.pos.x:" << posMain.x <<endl;
+		cout <<"B2.pos.z:" << posMain.z <<endl;
+		cout <<"B2.F.x:" << F.x <<endl;
+		cout <<"B2.F.z:" << F.z <<endl;
+		cout <<"B2.Fs.z:" << Fs.x <<endl;
+		cout <<"B2.Fs.z:" << Fs.z <<endl;
+
+
+		cout <<"\n\nB1.v.x:" << B1.v.x <<endl;
+		cout <<"B1.v.z:" << B1.v.z <<endl;
+		cout <<"B1.pos.x:" << B1.posMain.x <<endl;
+		cout <<"B1.pos.z:" << B1.posMain.z <<endl;
+		cout <<"B1.F.x:" << B1.F.x <<endl;
+		cout <<"B1.F.z:" << B1.F.z <<endl;
+		cout <<"B1.Fs.x:" << B1.Fs.x <<endl;
+		cout <<"B1.Fs.z:" << B1.Fs.z <<endl;
+
+
+
+
+
+		return B1;
+	}
+
+	void stopped_ball()
+	{
+
+		if (!(abs(F.x)>abs(Fs.x)))
+		{
+			a.x = F.x / m;
+			elfa.x = T.x / I();
+
+			v.x = a.x*dt + v.x;
+			w.x = elfa.x*dt + w.x;
+
+			pos.x = v.x*dt + pos.x;
+			posMain.x = v.x*dt + posMain.x;
+			theta.x = w.x*dt + theta.x;
+		}
+		else
+		{
+			cout << "\nBall Stoped" << endl;
+			s.x = 1;
+			F.x = F.x * 0;
+			v.x = v.x * 0;
+			w.x = w.x * 0;
+		}
+		if (!(abs(F.z)>abs(Fs.z)))
+		{
+			a.z = F.z / m;
+			elfa.z = T.z / I();
+
+			v.z = a.z*dt + v.z;
+			w.z = elfa.z*dt + w.z;
+
+			pos.z = v.z*dt + pos.z;
+			posMain.z = v.z*dt + posMain.z;
+			theta.z = w.z*dt + theta.z;
+		}
+		else
+		{
+			s.z = 1;
+			F.z = F.z * 0;
+			v.z = v.z * 0;
+			w.z = w.z * 0;
+		}
+	
+	}
+
+	void Frection_force()
+	{
+
+		F = F + FR() - FW() - Fr() - FF();
+		T = F*reduies;
+
+	}
+
+	void defection()
+	{
+		if ((posMain.x>200 || posMain.x<0) && (posMain.z>200 || posMain.z<0))
+		{
+			cout << "Game over" << endl;
+			s = 1;
+			F = F * 0;
+			v = v * 0;
+			w = w * 0;
+			pos.y = -50;
+		}
+		else if ((posMain.x>200 || posMain.x<0) || (posMain.z>200 || posMain.z<0))
+		{
+			cout << "\n$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ Collision With The Table $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$" << endl;
+
+			if (posMain.z>200 || posMain.z<0)
+			{
+
+				v.z = v.z*-1;
+				F.z = F.z*-1;
+				w.z = w.z*-1;
+			}
+			if (posMain.x>200 || posMain.x<0)
+			{
+
+				v.x = v.x*-1;
+				F.x = F.x*-1;
+				w.x = w.x*-1;
+			}
+		}
+
+	}
+
+	Stick shockStick(Stick stickk1)
+	{
+		if (stickk1.x == 1)   // العصى لم تصتدم بالكرة بعد
+		{
+
+			if (disStick(stickk1) < disStickL(stickk1))
+			{
+				cout << "-----------------------------------------------------------------------" << endl;
+				cout << "                          collision with stick                         " << endl;
+				cout << "-----------------------------------------------------------------------" << endl;
+				//cout << "FD    " << stickk1.FD().x << " " << stickk1.FD().y << " " << stickk1.FD().z << endl;
+				F = Fs = stickk1.FD();
+				a = F / m;
+				v = a*dt + v;
+				w = v / reduies;
+				stickk1.x = 0;
+			}
+		}
+		return stickk1;
+	}
+
+	double distance(Ball b1)
+	{
+		double dis = sqrt((b1.posMain.x - posMain.x)*(b1.posMain.x - posMain.x) + (b1.posMain.z - posMain.z)* (b1.posMain.z - posMain.z));
+		return dis;
+	}
+
+	double distanceLater(Ball b1)
+	{
+		Vector newposMain1 = v*dt + b1.posMain;
+		Vector newposMain2 = b1.v*dt + b1.posMain;
+		double dis = sqrt((newposMain1.x - newposMain2.x)*(newposMain1.x - newposMain2.x) + (newposMain1.z - newposMain2.z)* (newposMain1.z - newposMain2.z));
+		return dis;
+	}
+
+	double disStick(Stick s)
+	{
+		double dis = sqrt((s.posMain.x - posMain.x)*(s.posMain.x - posMain.x) + (s.posMain.z - posMain.z)* (s.posMain.z - posMain.z));
+		return dis;
+	}
+
+	double disStickL(Stick s)
+	{
+		Vector newposMain1 = v*dt + s.posMain;
+		Vector newposMain2 = s.v*dt + s.posMain;
+		double dis = sqrt((newposMain1.x - newposMain2.x)*(newposMain1.x - newposMain2.x) + (newposMain1.z - newposMain2.z)* (newposMain1.z - newposMain2.z));
+		return dis;
+	}
+
+};
+
+

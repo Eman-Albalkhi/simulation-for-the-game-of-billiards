@@ -1,0 +1,905 @@
+#include <windows.h>		// Header File For Windows
+#include <gl\gl.h>			// Header File For The OpenGL32 Library
+#include <gl\glu.h>			// Header File For The GLu32 Library
+#include "GLTexture.h"
+#include "Model_3DS.h"
+#include "texture.h"
+#include "camera.h"
+#include<stack>
+#include<math.h>
+#include<cmath>
+#include<time.h>
+#include<iostream>
+#include"Ball.h"
+#include "Person.h"
+
+#define PI 3.14159265358979323846
+
+using namespace std;
+
+HDC			hDC = NULL;		// Private GDI Device Context
+HGLRC		hRC = NULL;		// Permanent Rendering Context
+HWND		hWnd = NULL;		// Holds Our Window Handle
+HINSTANCE	hInstance;		// Holds The Instance Of The Application
+
+bool	keys[256];			// Array Used For The Keyboard Routine
+bool	active = TRUE;		// Window Active Flag Set To TRUE By Default
+bool	fullscreen = TRUE;	// Fullscreen Flag Set To Fullscreen Mode By Default
+
+LRESULT	CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);	// Declaration For WndProc
+
+GLvoid ReSizeGLScene(GLsizei width, GLsizei height)		// Resize And Initialize The GL Window
+{
+	if (height == 0)
+	{
+		height = 1;
+	}
+
+	glViewport(0, 0, width, height);
+
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+
+
+	gluPerspective(45.0f, (GLfloat)width / (GLfloat)height, 0.1f, 1000.0f);
+
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+}
+
+
+
+Camera camera;
+stack<char>st;
+
+int wall1, wall2, wall3, wall4, wall6, floor1, window, glass, door, table1, table2, wood1, wood2, wood3, wood4, wood5, p10, p9;
+Model_3DS ball;
+
+//Variable 
+Vector posMainB0(20, -45, 20), posMainB1(20, -45, 90), posMainB2(90, -45, 90), posMainB3(10 , -45, 10), posMainB4(150, -45, 150), posMainB5(170, -45, 170)
+	,posMainB6(100, -45, 80);
+Vector posMainS(0, -45, 0);
+
+/*Vector posMainB0(150, -45, 150),posMainB1(120, -45, 100),posMainB2(100, -45, 100),posMainB3(63, -45, 98);
+Vector posMainS(170,-45,170);*/
+
+
+Person person;
+Stick stickk(person, posMainS);
+Ball objBall[7];
+
+
+
+int InitGL(GLvoid)										// All Setup For OpenGL Goes Here
+{
+	glShadeModel(GL_SMOOTH);							// Enable Smooth Shading
+	glClearColor(0.0f, 0.0f, 0.0f, 0.5f);				// Black Background
+	glClearDepth(1.0f);									// Depth Buffer Setup
+	glEnable(GL_DEPTH_TEST);							// Enables Depth Testing
+	glDepthFunc(GL_LEQUAL);								// The Type Of Depth Testing To Do
+	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);	// Really Nice Perspective Calculations
+	glEnable(GL_TEXTURE_2D);
+	//room
+	wall1 = LoadTexture("wall1.bmp", 255);
+	wall2 = LoadTexture("wall2.bmp", 255);
+	wall3 = LoadTexture("wall3.bmp", 255);
+	wall4 = LoadTexture("wall4.bmp", 255);
+	wall6 = LoadTexture("wall6.bmp", 255);
+	floor1 = LoadTexture("floor1.bmp", 255);
+	window = LoadTexture("window.bmp", 255);
+	glass = LoadTexture("glass.bmp", 255);
+	door = LoadTexture("door.bmp", 255);
+	table1 = LoadTexture("table1.bmp", 255);
+	table2 = LoadTexture("table2.bmp", 255);
+	wood1 = LoadTexture("wood1.bmp", 255);
+	wood2 = LoadTexture("wood2.bmp", 255);
+	wood3 = LoadTexture("wood3.bmp", 255);
+	wood4 = LoadTexture("wood4.bmp", 255);
+	wood5 = LoadTexture("wood5.bmp", 255);
+	p10 = LoadTexture("p10.bmp", 255);
+	p9 = LoadTexture("p9.bmp", 255);
+
+	//model ball
+	ball.Load("Ball 1.3ds");
+	ball.Materials[1].tex.Load("wall1.bmp");
+
+
+
+
+
+	//console 
+	AllocConsole();
+	freopen("CONOUT$", "a", stdout);
+	freopen("CONIN$", "r", stdin);
+
+	// Array From Ball
+	objBall[0].Set(4, 0.08, posMainB0, 0, 0);
+	objBall[1].Set(4, 0.08, posMainB1, 0, 0);
+	objBall[2].Set(4, 0.08, posMainB2, 0, 0);
+	objBall[3].Set(4, 0.08, posMainB3, 0, 0);
+	objBall[4].Set(4, 0.08, posMainB4, 0, 0);
+	objBall[5].Set(4, 0.08, posMainB5, 0, 0);
+	objBall[6].Set(4, 0.08, posMainB6, 0, 0);
+
+
+
+
+	return TRUE;
+}
+void Camera1()
+{
+
+	if (keys['D'])
+	{
+		camera.MoveRight(2);
+	}
+	if (keys['A'])
+	{
+		camera.MoveRight(-2);
+	}
+	if (keys['W'])
+	{
+		camera.MoveForward(2);
+	}
+
+	if (keys['S'])
+	{
+		camera.MoveForward(-2);
+	}
+	if (keys['R'])
+	{
+		camera.MoveUpward(-2);
+	}
+
+	if (keys['E'])
+	{
+		camera.MoveUpward(2);
+	}
+	if (keys[VK_LEFT])
+	{
+		st.push('l');
+		camera.RotateY(2);
+	}
+	if (keys[VK_RIGHT])
+	{
+		st.push('r');
+		camera.RotateY(-2);
+	}
+	if (keys[VK_UP])
+	{
+		st.push('u');
+		camera.RotateX(2);
+	}
+	if (keys[VK_DOWN])
+	{
+		st.push('d');
+		camera.RotateX(-2);
+	}
+	if (keys['B'])
+	{
+		while (!st.empty())
+		{
+			char n = st.top();
+			st.pop();
+			if (n == 'l')
+				camera.RotateY(-5);
+			else if (n == 'r')
+				camera.RotateY(5);
+			else if (n == 'u')
+				camera.RotateX(-5);
+			else if (n == 'd')
+				camera.RotateX(5);
+		}
+	}
+	if (keys['N'])
+	{
+
+		while (!st.empty())
+		{
+			char n = st.top();
+			st.pop();
+			if (n == 'l')
+				camera.RotateY(-0.5);
+			else if (n == 'r')
+				camera.RotateY(0.5);
+			else if (n == 'u')
+				camera.RotateX(-0.5);
+			else if (n == 'd')
+				camera.RotateX(0.5);
+		}
+		camera.RotateY(-180);
+	}
+	if (keys['M'])
+	{
+		while (!st.empty())
+		{
+			char n = st.top();
+			st.pop();
+			if (n == 'l')
+				camera.RotateY(-0.5);
+			else if (n == 'r')
+				camera.RotateY(0.5);
+			else if (n == 'u')
+				camera.RotateX(-0.5);
+			else if (n == 'd')
+				camera.RotateX(0.5);
+		}
+		camera.RotateY(-90);
+	}
+
+
+
+}
+void Draw_Cub(float x1, float x2, float y1, float y2, float z1, float z2, int picture_1, int picture_2, int picture_3, int picture_4, int picture_5) {
+	glBindTexture(GL_TEXTURE_2D, picture_1);//FRONT SIDE
+	glBegin(GL_QUADS);
+	glColor3d(1, 1, 1);
+	glTexCoord2d(0, 0);
+	glVertex3d(x1, y1, z1);
+	glTexCoord2d(1, 0);
+	glVertex3d(x2, y1, z1);
+	glTexCoord2d(1, 1);
+	glVertex3d(x2, y2, z1);
+	glTexCoord2d(0, 1);
+	glVertex3d(x1, y2, z1);
+	glEnd();
+
+	glBindTexture(GL_TEXTURE_2D, picture_2);//RIGHT SIDE
+	glBegin(GL_QUADS);
+	glColor3d(1, 1, 1);
+	glTexCoord2d(0, 0);
+	glVertex3d(x2, y1, z1);
+	glTexCoord2d(1, 0);
+	glVertex3d(x2, y1, z2);
+	glTexCoord2d(1, 1);
+	glVertex3d(x2, y2, z2);
+	glTexCoord2d(0, 1);
+	glVertex3d(x2, y2, z1);
+	glEnd();
+
+	glBindTexture(GL_TEXTURE_2D, picture_3);//BACK SIDE
+	glBegin(GL_QUADS);
+	glColor3d(1, 1, 1);
+	glTexCoord2d(0, 0);
+	glVertex3d(x2, y1, z2);
+	glTexCoord2d(1, 0);
+	glVertex3d(x1, y1, z2);
+	glTexCoord2d(1, 1);
+	glVertex3d(x1, y2, z2);
+	glTexCoord2d(0, 1);
+	glVertex3d(x2, y2, z2);
+	glEnd();
+
+	glBindTexture(GL_TEXTURE_2D, picture_4);//LEFT SIDE
+	glBegin(GL_QUADS);
+	glColor3d(1, 1, 1);
+	glTexCoord2d(0, 0);
+	glVertex3d(x1, y1, z2);
+	glTexCoord2d(1, 0);
+	glVertex3d(x1, y1, z1);
+	glTexCoord2d(1, 1);
+	glVertex3d(x1, y2, z1);
+	glTexCoord2d(0, 1);
+	glVertex3d(x1, y2, z2);
+	glEnd();
+
+
+	glBindTexture(GL_TEXTURE_2D, picture_2);//ROOF SIDE
+	glBegin(GL_QUADS);
+	glColor3d(1, 1, 1);
+	glTexCoord2d(0, 0);
+	glVertex3d(x1, y2, z1);
+	glTexCoord2d(1, 0);
+	glVertex3d(x2, y2, z1);
+	glTexCoord2d(1, 1);
+	glVertex3d(x2, y2, z2);
+	glTexCoord2d(0, 1);
+	glVertex3d(x1, y2, z2);
+	glEnd();
+
+	glBindTexture(GL_TEXTURE_2D, picture_5);//FLOOR SIDE
+	glBegin(GL_QUADS);
+	glColor3d(1, 1, 1);
+	glTexCoord2d(0, 0);
+	glVertex3d(x1, y1, z2);
+	glTexCoord2d(1, 0);
+	glVertex3d(x2, y1, z2);
+	glTexCoord2d(1, 1);
+	glVertex3d(x2, y1, z1);
+	glTexCoord2d(0, 1);
+	glVertex3d(x1, y1, z1);
+	glEnd();
+
+}
+void room(float x, float y)
+{
+
+	glBindTexture(GL_TEXTURE_2D, wall6);//front 
+	glBegin(GL_QUADS);
+	glTexCoord2d(0, 0);
+	glVertex3d(-x, -y, -x);
+	glTexCoord2d(1, 0);
+	glVertex3d(x, -y, -x);
+	glTexCoord2d(1, 1);
+	glVertex3d(x, y, -x);
+	glTexCoord2d(0, 1);
+	glVertex3d(-x, y, -x);
+	glEnd();
+
+	glBindTexture(GL_TEXTURE_2D, wall6);
+	glBegin(GL_QUADS);
+	glTexCoord2d(0, 0);
+	glVertex3d(x, -y, x);
+	glTexCoord2d(1, 0);
+	glVertex3d(-x, -y, x);
+	glTexCoord2d(1, 1);
+	glVertex3d(-x, y, x);
+	glTexCoord2d(0, 1);
+	glVertex3d(x, y, x);
+	glEnd();
+
+	glBindTexture(GL_TEXTURE_2D, wall6);
+	glBegin(GL_QUADS);
+	glTexCoord2d(0, 0);
+	glVertex3d(-x, -y, x);
+
+	glTexCoord2d(1, 0);
+	glVertex3d(-x, -y, -x);
+	glTexCoord2d(1, 1);
+	glVertex3d(-x, y, -x);
+	glTexCoord2d(0, 1);
+	glVertex3d(-x, y, x);
+	glEnd();
+
+	glBindTexture(GL_TEXTURE_2D, wall6);
+	glBegin(GL_QUADS);
+	glTexCoord2d(0, 0);
+	glVertex3d(x, -y, -x);
+	glTexCoord2d(1, 0);
+	glVertex3d(x, -y, x);
+	glTexCoord2d(1, 1);
+	glVertex3d(x, y, x);
+	glTexCoord2d(0, 1);
+	glVertex3d(x, y, -x);
+	glEnd();
+
+	glBindTexture(GL_TEXTURE_2D, glass);//top
+	glBegin(GL_QUADS);
+	glTexCoord2d(20, 20);
+	glVertex3d(-x, y, -x);
+	glTexCoord2d(10, 20);
+	glVertex3d(x, y, -x);
+	glTexCoord2d(10, 10);
+	glVertex3d(x, y, x);
+	glTexCoord2d(20, 10);
+	glVertex3d(-x, y, x);
+	glEnd();
+
+	glBindTexture(GL_TEXTURE_2D, floor1);//dowm
+	glBegin(GL_QUADS);
+
+	glTexCoord2d(5, 5);
+	glVertex3d(-x, -y, -x);
+	glTexCoord2d(8, 5);
+	glVertex3d(x, -y, -x);
+	glTexCoord2d(8, 8);
+	glVertex3d(x, -y, x);
+	glTexCoord2d(5, 8);
+	glVertex3d(-x, -y, x);
+	glEnd();
+
+	//door
+	Draw_Cub(-40, 20, -100, 0, -390, -398, door, door, door, door, door);
+	//pictcer
+	Draw_Cub(-260, -200, -20, 60, -392, -400, wall2, wall2, wall2, wall2, wall2);
+	Draw_Cub(260, 200, -20, 60, -392, -400, wall2, wall2, wall2, wall2, wall2);
+	//window
+	Draw_Cub(398, 400, -20, 80, -230, -300, window, window, window, window, window);
+	Draw_Cub(398, 400, -20, 80, 230, 300, window, window, window, window, window);
+	Draw_Cub(390, 398, -100, 0, -30, 30, door, door, door, door, door);
+
+	//pictcer
+	Draw_Cub(-398, -400, -20, 80, -260, -300, wall3, wall3, wall3, wall3, wall3);
+	Draw_Cub(-398, -400, -20, 80, 260, 300, wall3, wall3, wall3, wall3, wall3);
+
+}
+void Table() {
+
+	Draw_Cub(0, 200, -65, -50, 21, 179, p9, p9, p9, p9, p9);
+	Draw_Cub(10, 95, -65, -50, 199, 180, p9, p9, p9, p9, p9);
+	Draw_Cub(105, 190, -65, -50, 199, 180, p9, p9, p9, p9, p9);
+	Draw_Cub(10, 95, -65, -50, 20, 0, p9, p9, p9, p9, p9);
+	Draw_Cub(105, 190, -65, -50, 20, 0, p9, p9, p9, p9, p9);
+
+	//etar
+	Draw_Cub(0, 200, -65, -45, 207, 201, door, door, door, door, door);
+	Draw_Cub(0, 200, -65, -45, -1, -7, door, door, door, door, door);
+	Draw_Cub(-7, -1, -65, -45, 200, 0, door, door, door, door, door);
+	Draw_Cub(201, 207, -65, -45, 200, 0, door, door, door, door, door);
+
+	//aemda
+	Draw_Cub(5, 10, -100, -65, 12, 20, door, door, door, door, door);
+	Draw_Cub(190, 195, -100, -65, 12, 20, door, door, door, door, door);
+	Draw_Cub(5, 10, -100, -65, 180, 188, door, door, door, door, door);
+	Draw_Cub(192, 190, -100, -65, 180, 188, door, door, door, door, door);
+
+
+
+
+
+}
+void BALL_white(float x, float y, float z, double reduies)
+{
+	ball.pos.x = x;
+	ball.pos.y = y;
+	ball.pos.z = z;
+	ball.scale = reduies;
+	ball.Draw();
+}
+void stick(float x, float y, float z)
+{
+	if (x<100)
+		Draw_Cub(x - 50, x, y, y + 2, z, z + 1, p10, p10, p10, p10, p10);
+
+	else if (x>100)
+		Draw_Cub(x + 50, x, y, y + 2, z, z + 1, p10, p10, p10, p10, p10);
+}
+
+void light()
+{
+	Draw_Cub(40, 45, -100, 40, -40, -20, p10, p10, p10, p10, p10);
+	Draw_Cub(40, 45, 40, 50, -4, 100, p10, p10, p10, p10, p10);
+}
+
+
+
+
+void DrawGLScene(GLvoid)
+{
+
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glLoadIdentity();
+	glTranslatef(-100, 0, -200);
+	gluLookAt(0.0f, 3.0f, 20.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
+	glRotated(90, 0, 1, 0);
+	camera.Render();
+	Camera1();
+	room(400, 100);
+	Table();
+
+
+	//stick
+	glPushMatrix();
+	if (stickk.x != 0)
+	{
+
+		stickk.forces_stick();
+		glTranslated(stickk.pos.x, stickk.pos.y, stickk.pos.z);
+		stick(posMainS.x, posMainS.y, posMainS.z);
+
+	}
+	glPopMatrix();
+
+	//ball_0
+	glPushMatrix();
+	stickk = objBall[0].shockStick(stickk);
+	objBall[0].defection();
+	objBall[0].stopped_ball();
+	objBall[0].Frection_force();
+	glTranslated(objBall[0].pos.x, objBall[0].pos.y, objBall[0].pos.z);
+	
+	BALL_white(posMainB0.x, posMainB0.y, posMainB0.z, objBall[0].reduies);
+	glRotated(objBall[0].theta.abs(), 0, 1, 0);
+	glPopMatrix();
+
+	//ball_1
+	glPushMatrix();
+	objBall[1].defection();
+	objBall[1].stopped_ball();
+	objBall[1].Frection_force();
+	glTranslated(objBall[1].pos.x, objBall[1].pos.y, objBall[1].pos.z);
+	
+	BALL_white(posMainB1.x, posMainB1.y, posMainB1.z, objBall[1].reduies);
+	glRotated(objBall[1].theta.abs(), 0, 1, 0);
+	if (objBall[0].distance(objBall[1]) < objBall[0].distanceLater(objBall[1]))
+		objBall[0] = objBall[1].forces_ball_ball(objBall[0]);
+	glPopMatrix();
+
+
+	//ball_2
+	glPushMatrix();
+	objBall[2].defection();
+	objBall[2].stopped_ball();
+	objBall[2].Frection_force();
+	glTranslated(objBall[2].pos.x, objBall[2].pos.y, objBall[2].pos.z);
+	
+	BALL_white(posMainB2.x, posMainB2.y, posMainB2.z, objBall[2].reduies);
+	glRotated(objBall[2].theta.abs(), 0, 1, 0);
+	for (int i = 0; i<2; i++)
+		if (objBall[2].distance(objBall[i]) < objBall[2].distanceLater(objBall[i]))
+			objBall[i] = objBall[2].forces_ball_ball(objBall[i]);
+	glPopMatrix();
+
+
+	//ball_3
+	glPushMatrix();
+	objBall[3].defection();
+	objBall[3].stopped_ball();
+	objBall[3].Frection_force();
+	glTranslated(objBall[3].pos.x, objBall[3].pos.y, objBall[3].pos.z);
+
+	BALL_white(posMainB3.x, posMainB3.y, posMainB3.z, objBall[3].reduies);
+	glRotated(objBall[3].theta.abs(), 0, 1, 0);
+	for (int i = 0; i<3; i++)
+		if (objBall[3].distance(objBall[i]) < objBall[3].distanceLater(objBall[i]))
+			objBall[i] = objBall[3].forces_ball_ball(objBall[i]);
+	glPopMatrix();
+	
+
+	//ball_4
+	glPushMatrix();
+	objBall[4].defection();
+	objBall[4].stopped_ball();
+	objBall[4].Frection_force();
+	glTranslated(objBall[4].pos.x, objBall[4].pos.y, objBall[4].pos.z);
+
+	BALL_white(posMainB4.x, posMainB4.y, posMainB4.z, objBall[4].reduies);
+	glRotated(objBall[4].theta.abs(), 0, 1, 0);
+	for (int i = 0; i<4; i++)
+		if (objBall[4].distance(objBall[i]) < objBall[4].distanceLater(objBall[i]))
+			objBall[i] = objBall[4].forces_ball_ball(objBall[i]);
+	glPopMatrix();
+
+	//ball_5
+	glPushMatrix();
+	objBall[5].defection();
+	objBall[5].stopped_ball();
+	objBall[5].Frection_force();
+	glTranslated(objBall[5].pos.x, objBall[5].pos.y, objBall[5].pos.z);
+
+	BALL_white(posMainB5.x, posMainB5.y, posMainB5.z, objBall[5].reduies);
+	glRotated(objBall[5].theta.abs(), 0, 1, 0);
+	for (int i = 0; i<5; i++)
+		if (objBall[5].distance(objBall[i]) < objBall[5].distanceLater(objBall[i]))
+			objBall[i] = objBall[5].forces_ball_ball(objBall[i]);
+	glPopMatrix();
+
+
+	//ball_6
+	glPushMatrix();
+	objBall[6].defection();
+	objBall[6].stopped_ball();
+	objBall[6].Frection_force();
+	glTranslated(objBall[6].pos.x, objBall[6].pos.y, objBall[6].pos.z);
+
+	BALL_white(posMainB6.x, posMainB6.y, posMainB6.z, objBall[6].reduies);
+	glRotated(objBall[6].theta.abs(), 0, 1, 0);
+	for (int i = 0; i<6; i++)
+		if (objBall[6].distance(objBall[i]) < objBall[6].distanceLater(objBall[i]))
+			objBall[i] = objBall[6].forces_ball_ball(objBall[i]);
+	glPopMatrix();
+
+	SwapBuffers(hDC);
+}
+
+GLvoid KillGLWindow(GLvoid)								// Properly Kill The Window
+{
+	if (fullscreen)										// Are We In Fullscreen Mode?
+	{
+		ChangeDisplaySettings(NULL, 0);					// If So Switch Back To The Desktop
+		ShowCursor(TRUE);								// Show Mouse Pointer
+	}
+
+	if (hRC)											// Do We Have A Rendering Context?
+	{
+		if (!wglMakeCurrent(NULL, NULL))					// Are We Able To Release The DC And RC Contexts?
+		{
+			MessageBox(NULL, "Release Of DC And RC Failed.", "SHUTDOWN ERROR", MB_OK | MB_ICONINFORMATION);
+		}
+
+		if (!wglDeleteContext(hRC))						// Are We Able To Delete The RC?
+		{
+			MessageBox(NULL, "Release Rendering Context Failed.", "SHUTDOWN ERROR", MB_OK | MB_ICONINFORMATION);
+		}
+		hRC = NULL;										// Set RC To NULL
+	}
+
+	if (hDC && !ReleaseDC(hWnd, hDC))					// Are We Able To Release The DC
+	{
+		MessageBox(NULL, "Release Device Context Failed.", "SHUTDOWN ERROR", MB_OK | MB_ICONINFORMATION);
+		hDC = NULL;										// Set DC To NULL
+	}
+
+	if (hWnd && !DestroyWindow(hWnd))					// Are We Able To Destroy The Window?
+	{
+		MessageBox(NULL, "Could Not Release hWnd.", "SHUTDOWN ERROR", MB_OK | MB_ICONINFORMATION);
+		hWnd = NULL;										// Set hWnd To NULL
+	}
+
+	if (!UnregisterClass("OpenGL", hInstance))			// Are We Able To Unregister Class
+	{
+		MessageBox(NULL, "Could Not Unregister Class.", "SHUTDOWN ERROR", MB_OK | MB_ICONINFORMATION);
+		hInstance = NULL;									// Set hInstance To NULL
+	}
+}
+
+/*	This Code Creates Our OpenGL Window.  Parameters Are:					*
+*	title			- Title To Appear At The Top Of The Window				*
+*	width			- Width Of The GL Window Or Fullscreen Mode				*
+*	height			- Height Of The GL Window Or Fullscreen Mode			*
+*	bits			- Number Of Bits To Use For Color (8/16/24/32)			*
+*	fullscreenflag	- Use Fullscreen Mode (TRUE) Or Windowed Mode (FALSE)	*/
+
+BOOL CreateGLWindow(char* title, int width, int height, int bits, bool fullscreenflag)
+{
+	GLuint		PixelFormat;			// Holds The Results After Searching For A Match
+	WNDCLASS	wc;						// Windows Class Structure
+	DWORD		dwExStyle;				// Window Extended Style
+	DWORD		dwStyle;				// Window Style
+	RECT		WindowRect;				// Grabs Rectangle Upper Left / Lower Right Values
+	WindowRect.left = (long)0;			// Set Left Value To 0
+	WindowRect.right = (long)width;		// Set Right Value To Requested Width
+	WindowRect.top = (long)0;				// Set Top Value To 0
+	WindowRect.bottom = (long)height;		// Set Bottom Value To Requested Height
+
+	fullscreen = fullscreenflag;			// Set The Global Fullscreen Flag
+
+	hInstance = GetModuleHandle(NULL);				// Grab An Instance For Our Window
+	wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;	// Redraw On Size, And Own DC For Window.
+	wc.lpfnWndProc = (WNDPROC)WndProc;					// WndProc Handles Messages
+	wc.cbClsExtra = 0;									// No Extra Window Data
+	wc.cbWndExtra = 0;									// No Extra Window Data
+	wc.hInstance = hInstance;							// Set The Instance
+	wc.hIcon = LoadIcon(NULL, IDI_WINLOGO);			// Load The Default Icon
+	wc.hCursor = LoadCursor(NULL, IDC_ARROW);			// Load The Arrow Pointer
+	wc.hbrBackground = NULL;									// No Background Required For GL
+	wc.lpszMenuName = NULL;									// We Don't Want A Menu
+	wc.lpszClassName = "OpenGL";								// Set The Class Name
+
+	if (!RegisterClass(&wc))									// Attempt To Register The Window Class
+	{
+		MessageBox(NULL, "Failed To Register The Window Class.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
+		return FALSE;											// Return FALSE
+	}
+
+	if (fullscreen)												// Attempt Fullscreen Mode?
+	{
+		DEVMODE dmScreenSettings;								// Device Mode
+		memset(&dmScreenSettings, 0, sizeof(dmScreenSettings));	// Makes Sure Memory's Cleared
+		dmScreenSettings.dmSize = sizeof(dmScreenSettings);		// Size Of The Devmode Structure
+		dmScreenSettings.dmPelsWidth = width;				// Selected Screen Width
+		dmScreenSettings.dmPelsHeight = height;				// Selected Screen Height
+		dmScreenSettings.dmBitsPerPel = bits;					// Selected Bits Per Pixel
+		dmScreenSettings.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
+
+		// Try To Set Selected Mode And Get Results.  NOTE: CDS_FULLSCREEN Gets Rid Of Start Bar.
+		if (ChangeDisplaySettings(&dmScreenSettings, CDS_FULLSCREEN) != DISP_CHANGE_SUCCESSFUL)
+		{
+			// If The Mode Fails, Offer Two Options.  Quit Or Use Windowed Mode.
+			if (MessageBox(NULL, "The Requested Fullscreen Mode Is Not Supported By\nYour Video Card. Use Windowed Mode Instead?", "NeHe GL", MB_YESNO | MB_ICONEXCLAMATION) == IDYES)
+			{
+				fullscreen = FALSE;		// Windowed Mode Selected.  Fullscreen = FALSE
+			}
+			else
+			{
+				// Pop Up A Message Box Letting User Know The Program Is Closing.
+				MessageBox(NULL, "Program Will Now Close.", "ERROR", MB_OK | MB_ICONSTOP);
+				return FALSE;									// Return FALSE
+			}
+		}
+	}
+
+	if (fullscreen)												// Are We Still In Fullscreen Mode?
+	{
+		dwExStyle = WS_EX_APPWINDOW;								// Window Extended Style
+		dwStyle = WS_POPUP;										// Windows Style
+		ShowCursor(FALSE);										// Hide Mouse Pointer
+	}
+	else
+	{
+		dwExStyle = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;			// Window Extended Style
+		dwStyle = WS_OVERLAPPEDWINDOW;							// Windows Style
+	}
+
+	AdjustWindowRectEx(&WindowRect, dwStyle, FALSE, dwExStyle);		// Adjust Window To True Requested Size
+
+																	// Create The Window
+	if (!(hWnd = CreateWindowEx(dwExStyle,							// Extended Style For The Window
+		"OpenGL",							// Class Name
+		title,								// Window Title
+		dwStyle |							// Defined Window Style
+		WS_CLIPSIBLINGS |					// Required Window Style
+		WS_CLIPCHILDREN,					// Required Window Style
+		0, 0,								// Window Position
+		WindowRect.right - WindowRect.left,	// Calculate Window Width
+		WindowRect.bottom - WindowRect.top,	// Calculate Window Height
+		NULL,								// No Parent Window
+		NULL,								// No Menu
+		hInstance,							// Instance
+		NULL)))								// Dont Pass Anything To WM_CREATE
+	{
+		KillGLWindow();								// Reset The Display
+		MessageBox(NULL, "Window Creation Error.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
+		return FALSE;								// Return FALSE
+	}
+
+	static	PIXELFORMATDESCRIPTOR pfd =				// pfd Tells Windows How We Want Things To Be
+	{
+		sizeof(PIXELFORMATDESCRIPTOR),				// Size Of This Pixel Format Descriptor
+		1,											// Version Number
+		PFD_DRAW_TO_WINDOW |						// Format Must Support Window
+		PFD_SUPPORT_OPENGL |						// Format Must Support OpenGL
+		PFD_DOUBLEBUFFER,							// Must Support Double Buffering
+		PFD_TYPE_RGBA,								// Request An RGBA Format
+		bits,										// Select Our Color Depth
+		0, 0, 0, 0, 0, 0,							// Color Bits Ignored
+		0,											// No Alpha Buffer
+		0,											// Shift Bit Ignored
+		0,											// No Accumulation Buffer
+		0, 0, 0, 0,									// Accumulation Bits Ignored
+		16,											// 16Bit Z-Buffer (Depth Buffer)  
+		0,											// No Stencil Buffer
+		0,											// No Auxiliary Buffer
+		PFD_MAIN_PLANE,								// Main Drawing Layer
+		0,											// Reserved
+		0, 0, 0										// Layer Masks Ignored
+	};
+
+	if (!(hDC = GetDC(hWnd)))							// Did We Get A Device Context?
+	{
+		KillGLWindow();								// Reset The Display
+		MessageBox(NULL, "Can't Create A GL Device Context.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
+		return FALSE;								// Return FALSE
+	}
+
+	if (!(PixelFormat = ChoosePixelFormat(hDC, &pfd)))	// Did Windows Find A Matching Pixel Format?
+	{
+		KillGLWindow();								// Reset The Display
+		MessageBox(NULL, "Can't Find A Suitable PixelFormat.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
+		return FALSE;								// Return FALSE
+	}
+
+	if (!SetPixelFormat(hDC, PixelFormat, &pfd))		// Are We Able To Set The Pixel Format?
+	{
+		KillGLWindow();								// Reset The Display
+		MessageBox(NULL, "Can't Set The PixelFormat.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
+		return FALSE;								// Return FALSE
+	}
+
+	if (!(hRC = wglCreateContext(hDC)))				// Are We Able To Get A Rendering Context?
+	{
+		KillGLWindow();								// Reset The Display
+		MessageBox(NULL, "Can't Create A GL Rendering Context.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
+		return FALSE;								// Return FALSE
+	}
+
+	if (!wglMakeCurrent(hDC, hRC))					// Try To Activate The Rendering Context
+	{
+		KillGLWindow();								// Reset The Display
+		MessageBox(NULL, "Can't Activate The GL Rendering Context.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
+		return FALSE;								// Return FALSE
+	}
+
+	ShowWindow(hWnd, SW_SHOW);						// Show The Window
+	SetForegroundWindow(hWnd);						// Slightly Higher Priority
+	SetFocus(hWnd);									// Sets Keyboard Focus To The Window
+	ReSizeGLScene(width, height);					// Set Up Our Perspective GL Screen
+
+	if (!InitGL())									// Initialize Our Newly Created GL Window
+	{
+		KillGLWindow();								// Reset The Display
+		MessageBox(NULL, "Initialization Failed.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
+		return FALSE;								// Return FALSE
+	}
+
+	return TRUE;									// Success
+}
+
+LRESULT CALLBACK WndProc(HWND	hWnd,			// Handle For This Window
+	UINT	uMsg,			// Message For This Window
+	WPARAM	wParam,			// Additional Message Information
+	LPARAM	lParam)			// Additional Message Information
+{
+	static PAINTSTRUCT ps;
+
+	switch (uMsg)									// Check For Windows Messages
+	{
+	case WM_PAINT:
+		DrawGLScene();
+		BeginPaint(hWnd, &ps);
+		EndPaint(hWnd, &ps);
+		return 0;
+
+	case WM_TIMER:
+		DrawGLScene();
+		return 0;
+
+	case WM_ACTIVATE:							// Watch For Window Activate Message
+	{
+		if (!HIWORD(wParam))					// Check Minimization State
+		{
+			active = TRUE;						// Program Is Active
+		}
+		else
+		{
+			active = FALSE;						// Program Is No Longer Active
+		}
+
+		return 0;								// Return To The Message Loop
+	}
+
+	case WM_SYSCOMMAND:							// Intercept System Commands
+	{
+		switch (wParam)							// Check System Calls
+		{
+		case SC_SCREENSAVE:					// Screensaver Trying To Start?
+		case SC_MONITORPOWER:				// Monitor Trying To Enter Powersave?
+			return 0;							// Prevent From Happening
+		}
+		break;									// Exit
+	}
+
+	case WM_CLOSE:								// Did We Receive A Close Message?
+	{
+		PostQuitMessage(0);						// Send A Quit Message
+		return 0;								// Jump Back
+	}
+
+	case WM_KEYDOWN:							// Is A Key Being Held Down?
+	{
+		keys[wParam] = TRUE;					// If So, Mark It As TRUE
+		return 0;								// Jump Back
+	}
+
+	case WM_KEYUP:								// Has A Key Been Released?
+	{
+		keys[wParam] = FALSE;					// If So, Mark It As FALSE
+		return 0;								// Jump Back
+	}
+
+	case WM_SIZE:								// Resize The OpenGL Window
+	{
+		ReSizeGLScene(LOWORD(lParam), HIWORD(lParam));  // LoWord=Width, HiWord=Height
+		return 0;								// Jump Back
+	}
+	}
+
+	// Pass All Unhandled Messages To DefWindowProc
+	return DefWindowProc(hWnd, uMsg, wParam, lParam);
+}
+
+int WINAPI WinMain(HINSTANCE	hInstance,			// Instance
+	HINSTANCE	hPrevInstance,		// Previous Instance
+	LPSTR		lpCmdLine,			// Command Line Parameters
+	int			nCmdShow)			// Window Show State
+{
+	MSG		msg;									// Windows Message Structure
+	BOOL	done = FALSE;								// Bool Variable To Exit Loop
+
+														// Ask The User Which Screen Mode They Prefer
+														//if (MessageBox(NULL,"Would You Like To Run In Fullscreen Mode?", "Start FullScreen?",MB_YESNO|MB_ICONQUESTION)==IDNO)
+	{
+		fullscreen = FALSE;							// Windowed Mode
+	}
+
+	// Create Our OpenGL Window
+	if (!CreateGLWindow("Madhat NeHe Template", 640, 480, 16, fullscreen))
+	{
+		return 0;									// Quit If Window Was Not Created
+	}
+
+
+	//Set drawing timer to 20 frame per second
+	UINT timer = SetTimer(hWnd, 0, 50, (TIMERPROC)NULL);
+
+	while (GetMessage(&msg, NULL, 0, 0))
+	{
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
+
+	return 0;
+
+}
+

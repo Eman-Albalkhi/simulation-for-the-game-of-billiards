@@ -1,0 +1,110 @@
+#pragma once
+#include"Vector.h"
+#include "Person.h"
+#include <math.h>
+#include<iostream>
+#define PI 3.14159265358979323846
+#define g  -8.9
+#define dt 1.0/60.0
+using namespace std;
+class Stick
+{
+public:
+	double m, teta2;
+
+	Vector v, pos, a, F, posMain;
+	Vector T, elfa, w, theta;
+	double k, L;
+	Person person;
+	int x;
+
+
+	Stick(Person person1, Vector posMainS)
+	{
+		person = person1;
+		posMain.x = posMainS.x;
+		posMain.z = posMainS.z;
+
+		m = 2;
+		x = 1;   //bump or no
+
+	}
+
+	double FD_theata()
+	{
+		return atan((double)person.v.z / person.v.x) * 180 / PI;
+	}
+
+	Vector FW() {
+		Vector f;
+		f.y = g*m;
+		return f;
+	}
+	Vector FR()
+	{
+		Vector f;
+		f.y = g*m;
+		return f;
+	}
+	Vector FD()
+	{
+
+		Vector f;
+		f.z = person.m*person.v.abs()*cos(person.theata()*PI / 180);
+		f.x = person.m*person.v.abs()*sin(person.theata()*PI / 180);
+		return f;
+	}
+
+
+	void forces_stick() {
+		if (x == 1)
+		{
+			F = FR() - FW() + FD();
+			a = F / m;
+			v = a*dt + v;
+			pos = v *dt + pos;
+			posMain = v *dt + posMain;
+		}
+
+		else if (x == 0)
+		{
+			pos.x = -5;
+		}
+	}
+
+
+
+	double I()
+	{
+		return (1.0 / 3.0)*m*L*L;
+	}
+	Vector T_fatel()
+	{
+		Vector T;
+		T.x = -k * theta.x;
+		T.z = -k * theta.z;
+		return T;
+	}
+
+	Vector T_F()
+	{
+		Vector T;
+		T.x = FD().x*L;
+		T.z = FD().y*L;
+		return T;
+	}
+
+	void Roted()
+	{
+
+
+		T = T_fatel() + T_F();
+		elfa = T / I();
+		w = elfa*dt + w;
+		theta = w*dt + theta;
+		theta.print();
+		// cout <<"eman"<< I() << endl;
+
+	}
+};
+

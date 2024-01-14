@@ -1,0 +1,83 @@
+#pragma once
+#include<iostream>
+#include<math.h>
+using namespace std;
+class Vector
+{
+public:
+	double x;
+	double y;
+	double z;
+	Vector(double x = 0, double y = 0, double z = 0) {
+		this->x = x;
+		this->y = y;
+		this->z = z;
+
+	}
+	Vector operator+(Vector v) {
+		Vector vv;
+		vv.x = x + v.x;
+		vv.y = y + v.y;
+		vv.z = z + v.z;
+		return vv;
+	}
+	Vector operator-(Vector v) {
+		Vector vv;
+		vv.x = x - v.x;
+		vv.y = y - v.y;
+		vv.z = z - v.z;
+		return vv;
+	}
+	Vector operator*(double dt) {
+		Vector vv;
+		vv.x = x * dt;
+		vv.y = y * dt;
+		vv.z = z * dt;
+		return vv;
+	}
+	Vector operator/(double dt) {
+		Vector vv;
+		vv.x = x / dt;
+		vv.y = y / dt;
+		vv.z = z / dt;
+		return vv;
+	}
+	Vector operator- ()
+	{
+		Vector res;
+		res.x = -x;
+		res.y = -y;
+		res.z = -z;
+
+		return res;
+	}
+	void print()
+	{
+		cout << "( " << x << " , " << y << " , " << z << " )" << endl;
+	}
+	double abs()
+	{
+		return sqrt(x*x + y*y + z*z);
+	}
+
+	Vector norm()
+	{
+		double a = abs();
+		if (a < 0.0001)
+		{
+			Vector v;
+			return v;
+		}
+		else
+		{
+			return (*this) / a;
+		}
+	}
+
+	double operator^(const Vector& b)
+	{
+		return x * b.x + y * b.y + z * b.z;
+	}
+
+
+};
